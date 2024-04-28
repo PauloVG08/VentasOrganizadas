@@ -1,0 +1,871 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+{% from "_macros.html" import render_field %}
+
+{% with messages = get_flashed_messages()%}
+    {% if messages%}
+        {%for message in messages %}
+            <div class="alert alert-warning">
+                {{message}}
+            </div>
+        {%endfor%}
+    {% endif %}
+{% endwith %}
+
+<form action="/realizarVenta" method="POST" id="form_venta">
+    <div class="row">
+        <div class="col-md-6">
+            <h1 class="h3 mb-2 text-gray"><i class="fas fa-solid fa-cart-plus"></i> Ventas</h1>
+        </div>
+        <div class="col-md-6 my-3 d-flex justify-content-end">
+            <a href="{{ url_for('stock.modulo_stock') }}" class="btn btn-success mb-3 mr-2" style="width: 150px;">
+                <i class="fas fa-box"></i> Ver Stock de Galletas
+            </a>
+            <button type="button" id="btnInteraccion" class="btn btn-primary mb-3" style="width: 150px;"
+                onclick="window.location.href='/moduloVenta?turno_id={{turno_id}}'">
+                <i class="fas fa-arrow-left"></i> Regresar
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Agregar Producto</h6>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="form-group col-md-4">
+                    {{ form.nombre.label(class="form-label", id="nombre_label") }}
+                    {{ render_field(form.nombre, class="form-control", placeholder="Nombre cliente") }}
+                </div>
+                <div class="form-group col-md-4">
+                    {{ form.tipo_venta.label(class="form-label", id="tipo_venta_label") }}
+                    {{ render_field(form.tipo_venta, class="form-control", placeholder="Tipo de venta") }}
+                </div>
+                <div class="form-group col-md-4">
+                    {{ form.cantidad.label(class="form-label", id="cantidad_label") }}
+                    {{ render_field(form.cantidad, class="form-control", placeholder="Cantidad") }}
+                </div>
+                <div class="form-group col-md-2"></div>
+                
+            </div>
+            <div class="row mb-3">
+                <div class="form-group col-md-4">
+                    {{ form.paquete.label(class="form-label", id="paquete_label") }}
+                    {{ render_field(form.paquete, class="form-control", placeholder="Paquete") }}
+                </div>
+                <div class="form-group col-md-4">
+                    {{ form.sabor.label(class="form-label", id="sabor_label") }}
+                    {{ render_field(form.sabor, class="form-control", placeholder="Sabor") }}
+                    <div class="row justify-content-center">
+                        <div class="text-center">
+                            <button id="saboresModal" class="btn btn-success" data-toggle="modal"
+                        data-target="#modalMultisabor">Sabores</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group col-md-4">
+                    {{ form.fecha.label(class="form-label", id="fecha_label") }}
+                    {{ render_field(form.fecha, class="form-control", placeholder="Fecga") }}
+                </div>
+            </div>
+            <br/>
+            <div class="row justify-content-center">
+                <div class="col-md-6 text-center">
+                    <button type="button" class="btn btn-primary" id="agregar_producto" name="agregar_producto">Agregar
+                        Producto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Productos</h6>
+        </div>
+        <div class="card-body">
+            <table class="table" id="tabla_productos">
+                <thead>
+                    <tr>
+                        <th>Cantidad</th>
+                        <th>Sabor</th>
+                        <th>Tipo de venta</th>
+                        <th>Precio Unitario</th>
+                        <th>Subtotal</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venta in ventas %}
+                    <tr>
+                        <td>{{ venta.cantidad }}</td>
+                        <td>{{ venta.sabor }}</td>
+                        <td>{{ venta.tipo_venta }}</td>
+                        <td>{{ venta.precio_unitario }}</td>
+                        <td>{{ venta.subtotal }}</td>
+                        <td><button type="button" class="btn btn-danger">Eliminar</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="row justify-content-center">
+                <div class="col-md-6 text-center">
+                    <h3><b>TOTAL: $ <a id="totalVenta"></a></b></h3>
+                    <button id="confirmarVenta" class="btn btn-success" data-toggle="modal"
+                        data-target="#modalConfirmacion">Realizar Venta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="modalConfirmacion" aria-hidden="true"
+        role="dialog">
+        <div class="container mt-5 modal-dialog" role="document">
+            <div class="row modal-content" style="display: contents;">
+                <div class="col-md-12 offset-md-3 mx-0">
+                    <div class="card">
+                        <div class="card-body">
+                            <h1 class="card-title text-center">Confirmar Venta</h1>
+                            <p class="card-text text-center">¿Estás seguro de realizar esta venta?</p>
+                            <div class="text-center">
+                                <button id="realizar_venta" type="submit" class="btn btn-success">Realizar
+                                    Venta</button>
+                                <button type="button" id="closeModalConfirmacion"
+                                    class="closeModalConfirmacion btn btn-danger"
+                                    onclick="$('#modalConfirmacion').modal('hide');">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalMultisabor" tabindex="-1" aria-labelledby="modalLabelMultisabor" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLabelMultisabor">Selecciona los sabores</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-center" id="warningSabores">El paquete solo puede tener X sabores</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ render_field(form_multisabor.saborPaquete, class="form-control", placeholder="Sabor") }}
+                            </div>
+
+                            <div class="form-group">
+                                {{ render_field(form_multisabor.saboresSelected, class="form-control", placeholder="Cantidad") }}
+                            </div>
+                            <div class="text-center">
+                                <button id="agregarSabor" class="btn btn-primary">Agregar Sabor</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table" id="tabla_sabores">
+                                <thead>
+                                    <tr>
+                                        <th>Sabor</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a type="button" id="guardarSabores" class="btn btn-success" onclick="$('#modalMultisabor').modal('hide');">Guardar</a>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+</form>
+
+<script src="{{ url_for('static', filename='jquery/jquery.min.js') }}"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        /// --------Capturar evento clic en botón Realizar Venta-------------
+        document.getElementById('realizar_venta').addEventListener('click', function (e) {
+            e.preventDefault();
+
+            var tabla = document.getElementById('tabla_productos');
+            var filas = tabla.getElementsByTagName('tr');
+            var datosVenta = [];
+            var nombre = document.getElementById('nombre').value.trim();
+            var fechaInput = document.getElementById('fecha').value.trim();            
+
+            if (filas.length <= 1) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'La tabla de productos está vacía.'
+                });
+                return;
+            }
+
+            for (var i = 1; i < filas.length; i++) {
+                var celdas = filas[i].getElementsByTagName('td');
+                console.log(filas);
+                var cantidad = celdas[0].innerText;
+                var sabor = celdas[1].innerText;
+                var tipoVenta = celdas[2].innerText;
+                var precio_unitario = celdas[3].innerText;
+                var subtotal = celdas[4].innerText;
+                var costoId = parseInt(celdas[6].innerText);
+                var recetaId = parseInt(celdas[7].innerText);
+                var saboresMultiRaw = celdas[8].innerText;
+                var cantidadGalletas = celdas[9].innerText;
+                var total = parseFloat(document.getElementById("totalVenta").innerHTML.replace('$', ''));
+
+
+                console.log(saboresMultiRaw.toString());
+                if (saboresMultiRaw !== '') {
+                    console.log(saboresMultiRaw);
+                    saboresMulti = JSON.parse(saboresMultiRaw); // Intentamos parsear si saboresMultiRaw tiene un valor "truthy" válido y no es 'none'
+                } else {
+                    saboresMulti = []; // Asignamos un arreglo vacío si saboresMultiRaw es "falsy" o igual a 'none'
+                }
+
+                if (nombre === '' || fechaInput === '') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Es necesario llenar el campo de Nombre y Fecha.'
+                    });
+                    return;
+                }
+
+                datosVenta.push({ nombre: nombre, tipoVenta: tipoVenta, cantidad: cantidad, sabor: sabor, fecha: fechaInput, precio_unitario: precio_unitario, subtotal: subtotal, total: total, galleta_id: costoId, receta_id: recetaId, cantidadGalletas: cantidadGalletas, saboresMulti: saboresMulti });
+            }
+
+            console.log(datosVenta);
+
+            // Obtener el token CSRF del formulario
+            var csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+            fetch('/realizarVenta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ ventas: datosVenta })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.mensaje === 'Correcto') {
+                        //Limpiar los campos
+                        document.getElementById('nombre').value = '';
+                        document.getElementById('tipo_venta').value = '';
+                        document.getElementById('cantidad').value = '';
+                        document.getElementById('sabor').value = '';
+                        document.getElementById('fecha').value = '';
+
+                        // Limpiar la tabla
+                        var tabla = document.getElementById('tabla_productos');
+                        tabla.innerHTML = '<tr><th>Tipo de Venta</th><th>Cantidad</th><th>Sabor</th></tr>';
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            text: 'La venta fue realizada correctamente.'
+                        });
+
+                        window.location.href = '/moduloVenta';
+                    } else if (data.mensaje === 'Stock') {
+                        $('#modalConfirmacion').modal('hide');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No hay suficientes galletas de ' + data.galleta +' en el inventario, ingresa otra cantidad.'
+                        });
+                    }                     
+                    else {
+                        $('#modalConfirmacion').modal('hide');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Ocurrió un error al insertar los datos de venta.'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);    
+                });
+        });
+
+        //-------------- Capturar evento clic en botón Agregar Producto------------
+        document.getElementById('agregar_producto').addEventListener('click', function (e) {
+            e.preventDefault();
+
+            // Obtener valores de los campos
+            var tipoVenta = document.getElementById('tipo_venta').value.trim();
+            var cantidad = document.getElementById('cantidad').value.trim();
+            var saborRaw = document.getElementById('sabor').value;
+
+            dataSabor = saborRaw.replace(/[()\s]/g, '');
+            dataDepurada = dataSabor.split(',');
+
+            var sabor = dataDepurada[0].replace(/'/g, '');
+
+            if (cantidad === '' || cantidad == 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Es necesario llenar el campo Cantidad.'
+                });
+                return;
+            }
+
+            if (cantidad < 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'La cantidad no puede ser negativa.'
+                });
+                return;
+            }
+
+            if (sabor === 'multisabor') {                
+                // obtener los valores de la tabla con id tabla_sabores
+                var tablaSabores = document.getElementById('tabla_sabores');
+                var filaSabor = tablaSabores.getElementsByTagName('tr');
+                var paqueteMulti = document.getElementById('paquete').value;
+                var sabores = [];
+                
+                if (paqueteMulti == 1){
+                    if (filaSabor.length -1 > 3) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'El paquete de 700g solo permite 3 sabores, es necesario eliminar sabores.'
+                        });
+                        return;
+                    }
+                }else if(paqueteMulti == 2){
+                    if (filaSabor.length -1 > 4) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'El paquete de 1kg solo permite 4 sabores, es necesario eliminar sabores.'
+                        });
+                        return;
+                    }
+                }else if (paqueteMulti == 0) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Por favor selecciona un paquete'
+                    });
+                    return;
+                }
+
+                for (var i = 0; i < filaSabor.length; i++) {
+                    var celdasSabor = filaSabor[i].getElementsByTagName('td');
+                    if (celdasSabor.length >= 2) {
+                        var sabor = {
+                            'idCosto': celdasSabor[4].innerHTML,
+                            'idReceta': celdasSabor[3].innerHTML,
+                            'sabor': celdasSabor[0].innerHTML,
+                            'precio': celdasSabor[1].innerHTML,
+                            'stock': celdasSabor[5].innerHTML
+                        }
+                        sabores.push(sabor);
+                    } else {
+                        console.error("La fila " + i + " no contiene suficientes celdas.");
+                    }
+                }
+
+                console.log(sabores);
+
+                cantSabores = sabores.length;
+                console.log('-----CALCULO PRECIO------');
+                console.log(cantSabores);
+
+                if (paqueteMulti == 1){
+                    cantidadxsabor = Math.ceil(Math.ceil(700/30) / cantSabores);
+                }
+
+                if (paqueteMulti == 2){
+                    cantidadxsabor = Math.ceil(Math.ceil(1000/30) / cantSabores);
+                }
+
+                sabores.forEach((sabor) => {
+                    if(sabor.stock < cantidadxsabor){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No hay suficientes galletas de ' + sabor.sabor +' en el inventario para armar el paquete. Vuelve a intentarlo mas tarde.'
+                        });
+                        return;
+                    }else{
+                        // agregar un nuevo atributo llamado cantidadGalletas a los sabores
+                        sabor.cantidadGalletas = cantidadxsabor;
+                    }
+                })
+
+                 // Crear nueva fila en la tabla
+                 var tabla = document.getElementById('tabla_productos').getElementsByTagName('tbody')[0];
+                 var nuevaFila = tabla.insertRow();
+ 
+                 // Insertar celdas en la nueva fila
+                 var celdaCantidad = nuevaFila.insertCell(0);
+                 var celdaSabor = nuevaFila.insertCell(1);
+                 var celdaTipoVenta = nuevaFila.insertCell(2);
+                 var celdaPrecio = nuevaFila.insertCell(3);
+                 var celdaSubtotal = nuevaFila.insertCell(4);
+                 var celdaAcciones = nuevaFila.insertCell(5);
+                 var celdaReceta = nuevaFila.insertCell(6);
+                 var celdaGalleta = nuevaFila.insertCell(7);
+                 var celdaSaboresMulti = nuevaFila.insertCell(8);
+                 var celdaCantidadGalletas = nuevaFila.insertCell(9);
+                 celdaSaboresMulti.innerText = JSON.stringify(sabores);
+                 celdaSaboresMulti.style = "display: none";
+                 celdaGalleta.innerHTML = 0;
+                 celdaGalleta.style = "display: none";
+                 celdaReceta.innerHTML = '';
+                 celdaReceta.style = "display: none";
+                 celdaCantidadGalletas.innerHTML = 0;
+                 celdaCantidadGalletas.style = "display: none";
+
+                precioRaw = 0.0;
+                sabores.forEach((sabor) => {
+                    precioRaw += parseFloat(sabor.precio) * parseFloat(cantidadxsabor);
+                });
+
+                var subtotalPaquete = '';
+                if (paqueteMulti == 1){
+                    subtotalPaquete = '$' + ((parseFloat(precioRaw * 0.9).toFixed(2)) * cantidad);
+                    celdaPrecio.innerHTML = Math.ceil(parseFloat(precioRaw * 0.9).toFixed(2));
+                }
+
+                if (paqueteMulti == 2){
+                    subtotalPaquete = '$' + ((parseFloat(precioRaw * 0.85).toFixed(2)) * cantidad);
+                    celdaPrecio.innerHTML = Math.ceil(parseFloat(precioRaw * 0.85).toFixed(2));
+                }                
+
+                paquete = document.getElementById('paquete').value;
+
+                if (paquete == '1'){
+                    cantidadTotal = parseFloat(cantidad) * 700
+                    celdaTipoVenta.innerHTML = tipoVenta + ' 700g';
+                }
+
+                if (paquete == '2'){
+                    cantidadTotal = parseFloat(cantidad) * 1000
+                    celdaTipoVenta.innerHTML = tipoVenta + ' 1Kg';
+                }
+
+                celdaSubtotal.innerHTML = subtotalPaquete;
+                celdaCantidad.innerHTML = cantidad;
+                
+                cadenaSabor = 'Multisabor: ';
+                sabores.forEach((sabor) => {
+                    cadenaSabor += sabor.sabor + ', ';
+                });
+                celdaSabor.innerHTML = cadenaSabor;
+
+                celdaAcciones.innerHTML = '<button type="button" class="btn btn-danger eliminar-fila">Eliminar</button>';
+
+                console.log(nuevaFila);
+
+                // Limpiar campos del formulario
+                document.getElementById('tipo_venta').value = '';
+                document.getElementById('cantidad').value = '';
+                document.getElementById('sabor').value = '';
+
+                // Calcular el total de la venta
+                let rows = tabla.getElementsByTagName('tr');
+                let total = 0;
+
+                for (let i = 0; i < rows.length; i++) {
+                    // Get the cells in the current row
+                    let cells = rows[i].getElementsByTagName('td');
+                    total += parseFloat(cells[4].innerText.replace('$', ''));
+                }
+
+                document.getElementById('totalVenta').innerHTML = Math.ceil(total);
+            }else{
+
+                var costoId = parseInt(dataDepurada[1]);
+                var precioUnitario = parseFloat(dataDepurada[2]);
+                var stock = parseInt(dataDepurada[3]);
+                var receta = parseInt(dataDepurada[4]);
+                var cantidadGalletas = 0;
+                let subtotal = 0;
+
+                // revisar en la tabla si hay un producto con el mismo costoId
+                var celdas = document.getElementById('tabla_productos').getElementsByTagName('tr');
+                var cantidadEvaluar = 0;
+                if (tipoVenta === 'gramos') {
+                    cantidadEvaluar = Math.ceil((parseFloat(cantidad) / 30));
+                    cantidadGalletas = cantidadEvaluar;
+                }
+
+                if (tipoVenta === 'pieza') {
+                    cantidadEvaluar = cantidad;
+                    cantidadGalletas = cantidadEvaluar;
+                }
+
+                if (tipoVenta === 'paquete') {
+                    paquete = document.getElementById('paquete').value;
+                    console.log(paquete);
+                    let cantidadxpaquete = 0;
+
+                    if (paquete == '1'){
+                        cantidadxpaquete = parseFloat(cantidad) * 700;
+                        cantidadGalletas = cantidadxpaquete;
+                    }
+
+                    if (paquete == '2'){
+                        cantidadxpaquete = parseFloat(cantidad) * 1000;
+                        cantidadGalletas = cantidadxpaquete;
+                    }
+
+                    cantidadEvaluar =  Math.ceil(parseFloat(cantidadxpaquete) / 30);
+                }
+                var cantGalletasTabla = cantidadEvaluar;
+
+                console.log(celdas.length);
+
+                if (celdas.length === 1) {
+                    if (cantidadEvaluar > stock) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No hay suficientes galletas en el inventario, ingresa otra cantidad.'
+                        });
+                        return;
+                    }
+                }else{
+                    for (var i = 1; i < celdas.length; i++) {
+                        var cells = celdas[i].getElementsByTagName('td');
+                        var currentCostoId = parseInt(cells[6].innerText);
+                        if (currentCostoId === costoId) {
+                            //cantGalletasTabla += parseInt(cells[4].innerText / cells[3].innerText); 
+        
+                            if ( tipoVenta === 'gramos') {
+                                cantGalletasTabla += Math.ceil(parseInt(cells[0].innerText / 30));
+                            }else if ( tipoVenta === 'pieza') {
+                                cantGalletasTabla += parseInt(cells[0].innerText);
+                            }else if ( tipoVenta === 'paquete') {
+                                if (paquete == '1'){
+                                    cantGalletasTabla += Math.ceil(Math.ceil(700 / 30) * parseInt(cells[0].innerText));
+                                }
+        
+                                if (paquete == '2'){
+                                    cantGalletasTabla += Math.ceil(Math.ceil(1000 / 30) * parseInt(cells[0].innerText));
+                                }
+                            }
+        
+                            if (cantGalletasTabla > stock) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'No hay suficientes galletas en el inventario, ingresa otra cantidad.'
+                                });
+                                return;
+                            }
+                        }
+                    }
+                }            
+
+                // Verificar que todos los campos estén completos
+                if (tipoVenta === '' || cantidad === '' || sabor === '') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Por favor completa todos los campos.'
+                    });
+                    return; // Detener la ejecución si falta algún campo
+                }
+
+                if (tipoVenta === 'paquete') {
+                    if (document.getElementById('paquete').value === '0'){
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Por favor selecciona una presentación de paquete.'
+                        });
+                        return;
+                    }
+                }
+
+                if (tipoVenta === 'pieza') {
+                    if (cantidad >= stock) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No hay suficientes galletas en el inventario, ingresa otra cantidad.'
+                        });
+                        return;
+                    }
+
+                    subtotal = '$' + (Math.ceil(parseFloat(cantidad)) * parseFloat(precioUnitario));
+                }
+
+                if (tipoVenta === 'gramos') {
+                    unidades = (parseFloat(cantidad) / 30)
+                    //redondear la cantidad de unidades en un valor entero por ejemplo: 1.5 = 2, 1.1 = 2
+                    subtotal = '$' + (Math.ceil(parseFloat(unidades)) * parseFloat(precioUnitario));
+                }
+
+                // precio por paquete
+                if (tipoVenta === 'paquete') {
+                    paquete = document.getElementById('paquete').value;
+                    console.log(paquete);
+
+                    if (paquete == '1'){
+                        // precio por paquete
+                        cantGalletasPaquete = Math.ceil(700 / 30);
+                        precioPaquete = Math.ceil((parseFloat(cantGalletasPaquete) * parseFloat(precioUnitario)) * 0.9);
+                    }
+
+                    if (paquete == '2'){
+                        cantGalletasPaquete = Math.ceil(1000 / 30);
+                        precioPaquete = Math.ceil((parseFloat(cantGalletasPaquete) * parseFloat(precioUnitario)) * 0.85);
+                    }
+
+                    unidades =  cantidad;
+                    subtotal = '$' + Math.ceil((Math.ceil(parseFloat(unidades)) * parseFloat(precioPaquete)));
+                    //subtotal = '$' + (parseFloat(Math.ceil(Math.ceil(parseFloat(unidades)) * parseFloat(precioUnitario) * descuento)));
+                }
+
+                // Crear nueva fila en la tabla
+                var tabla = document.getElementById('tabla_productos').getElementsByTagName('tbody')[0];
+                var nuevaFila = tabla.insertRow();
+
+                // Insertar celdas en la nueva fila
+                var celdaCantidad = nuevaFila.insertCell(0);
+                var celdaSabor = nuevaFila.insertCell(1);
+                var celdaTipoVenta = nuevaFila.insertCell(2);
+                var celdaPrecio = nuevaFila.insertCell(3);
+                var celdaSubtotal = nuevaFila.insertCell(4);
+                var celdaAcciones = nuevaFila.insertCell(5);
+                var celdaReceta = nuevaFila.insertCell(6);
+                var celdaGalleta = nuevaFila.insertCell(7);
+                var celdaSaboresMulti = nuevaFila.insertCell(8);
+                var celdaCantidadGalletas = nuevaFila.insertCell(9);
+                celdaCantidadGalletas.innerHTML = cantidadGalletas;
+                celdaCantidadGalletas.style = "display: none";
+                celdaSaboresMulti.innerText = '';
+                celdaSaboresMulti.style = "display: none";
+                celdaGalleta.innerHTML = receta;
+                celdaGalleta.style = "display: none";
+                celdaReceta.innerHTML = costoId;
+                celdaReceta.style = "display: none";
+
+                // Agregar valores a las celdas
+                if (tipoVenta === 'paquete') {
+                    paquete = document.getElementById('paquete').value;
+
+                    if (paquete == '1'){
+                        cantidadTotal = parseFloat(cantidad) * 700
+                        celdaTipoVenta.innerHTML = tipoVenta + ' 700g';
+                    }
+
+                    if (paquete == '2'){
+                        cantidadTotal = parseFloat(cantidad) * 1000
+                        celdaTipoVenta.innerHTML = tipoVenta + ' 1Kg';
+                    }
+                    celdaPrecio.innerHTML = Math.ceil(precioPaquete);
+                }else{
+                    celdaTipoVenta.innerHTML = tipoVenta;
+                    celdaPrecio.innerHTML = precioUnitario;
+                }
+
+                celdaSubtotal.innerHTML = subtotal;
+                celdaCantidad.innerHTML = cantidad;
+                celdaSabor.innerHTML = sabor;
+
+                celdaAcciones.innerHTML = '<button type="button" class="btn btn-danger eliminar-fila">Eliminar</button>';
+
+                console.log(nuevaFila);
+
+                // Limpiar campos del formulario
+                document.getElementById('tipo_venta').value = '';
+                document.getElementById('cantidad').value = '';
+                document.getElementById('sabor').value = '';
+
+                // Calcular el total de la venta
+                let rows = tabla.getElementsByTagName('tr');
+                let total = 0;
+
+                for (let i = 0; i < rows.length; i++) {
+                    // Get the cells in the current row
+                    let cells = rows[i].getElementsByTagName('td');
+                    total += parseFloat(cells[4].innerText.replace('$', ''));
+                }
+
+                document.getElementById('totalVenta').innerHTML = Math.ceil(total);
+
+            }
+        });
+
+        // Capturar evento clic en botón Eliminar
+        document.getElementById('tabla_productos').addEventListener('click', function (e) {
+            if (e.target.classList.contains('eliminar-fila')) {
+                e.preventDefault();
+                var fila = e.target.closest('tr');
+                fila.remove();
+                var tabla = document.getElementById('tabla_productos').getElementsByTagName('tbody')[0];
+                let rows = tabla.getElementsByTagName('tr');
+                let total = 0;
+
+                for (let i = 0; i < rows.length; i++) {
+                    // Get the cells in the current row
+                    let cells = rows[i].getElementsByTagName('td');
+                    total += parseFloat(cells[4].innerText.replace('$', ''));
+                }
+
+                document.getElementById('totalVenta').innerHTML = Math.ceil(total);
+            }
+        });
+
+        var select = document.getElementById('sabor');
+            for (var i = 0; i < select.options.length; i++) {
+                saborRaw = select.options[i].value;
+                dataSabor = saborRaw.replace(/[()\s]/g, '');
+                dataDepurada = dataSabor.split(',');
+                var sabor = dataDepurada[0].replace(/'/g, '');
+                if (sabor === 'multisabor') {
+                    select.options[i].hidden = true;
+                }
+            }
+
+            document.getElementById('saboresModal').style.display = 'none';
+    });
+
+    $(document).on('click', '#closeModalConfirmacion', function () {
+        $('#modalConfirmacion').modal('hide');
+    });
+
+    document.getElementById('paquete').disabled = true;
+    document.getElementById('paquete').value = '0';
+    document.getElementById('totalVenta').innerHTML = '0.00';
+
+    document.getElementById('tipo_venta').addEventListener('change', function () {
+        let selected = this.value;
+
+        if (selected === 'pieza' || selected === 'gramos') {
+            document.getElementById('paquete').disabled = true;
+            document.getElementById('paquete').value = '0';
+            // las opciones de sabores oculta la opcion 'multisabor'
+            var select = document.getElementById('sabor');
+            for (var i = 0; i < select.options.length; i++) {
+                saborRaw = select.options[i].value;
+                dataSabor = saborRaw.replace(/[()\s]/g, '');
+                dataDepurada = dataSabor.split(',');
+                var sabor = dataDepurada[0].replace(/'/g, '');
+                if (sabor === 'multisabor') {
+                    select.options[i].hidden = true;
+                }
+            }
+        } else {
+            document.getElementById('paquete').disabled = false;
+            var select = document.getElementById('sabor');
+            for (var i = 0; i < select.options.length; i++) {
+                saborRaw = select.options[i].value;
+                dataSabor = saborRaw.replace(/[()\s]/g, '');
+                dataDepurada = dataSabor.split(',');
+                var sabor = dataDepurada[0].replace(/'/g, '');
+                if (sabor === 'multisabor') {
+                    select.options[i].hidden = false;
+                }
+            }
+        }
+    });
+
+    // listener que permita que se muestre el modalMultisabor cuando el sabor de la galleta sea multisabor
+    document.getElementById('sabor').addEventListener('change', function () {
+        let selected = this.value;
+        dataSabor = selected.replace(/[()\s]/g, '');
+        dataDepurada = dataSabor.split(',');
+        sabor = dataDepurada[0].replace(/'/g, '');
+        if (sabor === 'multisabor') {
+            if (document.getElementById('paquete').value === '0') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Por favor selecciona un paquete'
+                });
+            }
+
+            if (document.getElementById('paquete').value === '1') {
+                document.getElementById('warningSabores').innerText = 'El paquete seleccionado solo puede tener 3 sabores como maximo';
+            }
+
+            if (document.getElementById('paquete').value === '2') {
+                document.getElementById('warningSabores').innerText = 'El paquete seleccionado solo puede tener 4 sabores como maximo';
+            }
+
+            document.getElementById('saboresModal').style.display = 'block';
+            $('#modalMultisabor').modal('show');
+        } else {
+            document.getElementById('saboresModal').style.display = 'none';
+            $('#modalMultisabor').modal('hide');
+        }
+    });
+
+    document.getElementById('agregarSabor').addEventListener('click', function (e) {
+        e.preventDefault();
+
+        var saborRaw = document.getElementById('saborPaquete').value;
+
+        dataSabor = saborRaw.replace(/[()\s]/g, '');
+        dataDepurada = dataSabor.split(',');
+
+        var sabor = dataDepurada[0].replace(/'/g, '');
+        var costoId = parseInt(dataDepurada[1]);
+        var precioUnitario = parseFloat(dataDepurada[2]);
+        var stock = parseInt(dataDepurada[3]);
+        var receta = parseInt(dataDepurada[4]);
+
+        var tabla = document.getElementById('tabla_sabores').getElementsByTagName('tbody')[0];
+        var nuevaFila = tabla.insertRow(tabla.rows.length);
+
+        var celdaSabor = nuevaFila.insertCell(0);
+        var celdaPrecio = nuevaFila.insertCell(1);
+        var celdaAccion = nuevaFila.insertCell(2);
+        var celdaGalleta = nuevaFila.insertCell(3);
+        var celdaReceta = nuevaFila.insertCell(4);
+        var celdaStock = nuevaFila.insertCell(5);
+        celdaGalleta.innerHTML = receta;
+        celdaGalleta.style = "display: none";
+        celdaReceta.innerHTML = costoId;
+        celdaReceta.style = "display: none";
+        celdaStock.innerHTML = stock;
+        celdaStock.style = "display: none";
+
+        celdaSabor.innerHTML = sabor;
+        celdaPrecio.innerHTML = precioUnitario;
+        celdaAccion.innerHTML = '<button type="button" class="btn btn-danger eliminar-sabor">Eliminar</button>';
+    });
+
+    document.getElementById('tabla_sabores').addEventListener('click', function (e) {
+        if (e.target.classList.contains('eliminar-sabor')) {
+            e.preventDefault();
+            var fila = e.target.closest('tr');
+            fila.remove();
+        }
+    });
+    
+
+</script>
+
+{% endblock %}

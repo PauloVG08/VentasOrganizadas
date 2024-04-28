@@ -1,0 +1,211 @@
+{%extends 'layout.html' %}
+
+{%block content %}
+{% from "_macros.html" import render_field %}
+
+
+<!-- Page Heading -->
+    <div class="row">
+        <div class="col-md-6 my-3">
+            <h1 class="h3 mb-2 text-gray"><i class="fas fa-solid fa-receipt"></i> Recetas</h1>
+        </div>
+    
+        <div class="col-md-6 my-3 d-flex justify-content-end">
+            <button type="button" id="btnInteraccion" class="btn btn-primary" onclick="window.location.href='/vistaRecetas'"><i class="fas fa-arrow-left"></i> Regresar
+            </button>
+        </div>
+    </div>
+
+    <!-- Form Receta -->
+    <div class="card shadow mb-4" id="spacesForm">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Formulario</h6>
+        </div>
+        <div class="card-body">
+            <form action="/nuevaReceta" method="POST" enctype="multipart/form-data">
+                <!-- Datos de Receta -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="col-12">
+                            <i class="fas fa-solid fa-receipt"></i> Datos Receta
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-4 form-group">
+                                {{ formReceta.nombre.label(class="form-label") }} 
+                                {{ render_field(formReceta.nombre, class="form-control",) }}
+                            </div>
+                            <div class="col-sm-4 form-group">
+                                {{ formReceta.num_galletas.label(class="form-label") }} 
+                                {{ render_field(formReceta.num_galletas, class="form-control") }}
+                            </div>
+                            <div class="col-sm-4 form-group">
+                                {{ formReceta.fecha.label(class="form-label") }} 
+                                {{ render_field(formReceta.fecha, class="form-control") }}
+                            </div>
+                            <div class="col-sm-4 form-group">
+                            </div>
+                            <div class="col-sm-4 form-group">
+                                {{ render_field(formReceta.imagen, class="custom-file-input", id="imagen_input", onchange="mostrarNombreImagen(this)", accept="image/png") }}
+                                <label class="custom-file-label" for="imagen_input" id="nombre_imagen_label">Elegir imagen</label>
+                            </div>
+                            <div class="col-sm-4 form-group text-center">
+                                <img id="imagen_preview" src="" alt="Vista previa de la imagen" class="img-fluid" style="height: 100px; width: 100px">
+                            </div>
+                            <div class="col-sm-4 form-group" style="display: none;">
+                                {{ render_field(formReceta.ingredientes, class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <!-- Datos de Detalle -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="col-12">
+                            <i class="fas fa-solid fa-receipt"></i> Detalle Receta
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="card col-6">
+                                <div class="card-header">
+                                    <div class="col-md-12">
+                                        <i class="fas fa-solid fa-kitchen-set"></i> Pasos de la Receta
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-12 form-group">
+                                            {{ formReceta.descripcion.label(class="form-label") }} 
+                                            {{ render_field(formReceta.descripcion, rows="15", class="form-control") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="card col-6">
+                                <div class="card-header">
+                                    <div class="col-md-12">
+                                        <i class="fas fa-solid fa-wheat-awn"></i> Ingredientes
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="row">
+                                            <div class="col-sm-6 form-group">
+                                                {{ formReceta.ingrediente.label(class="form-label", id="ingrediente_label") }}
+                                                <select name="ingrediente" id="ingrediente_input" class="form-control">
+                                                    {% for materia_prima in materias_primas %}
+                                                        <option value="{{ materia_prima.id, materia_prima.nombre }}">{{ materia_prima.nombre }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                {% for error in formReceta.ingrediente.errors %}
+                                                    <span class="text-danger">{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                            <div class="col-sm-6 form-group">
+                                                {{ formReceta.cantidad.label(class="form-label", id="cantidad_label") }}
+                                                {{ render_field(formReceta.cantidad, class="form-control", id="cantidad_input") }}
+                                            </div>
+                                            <div class="col-sm-6 form-group">
+                                                {{ formReceta.unidad_medida.label(class="form-label", id="unidad_medida_label") }}
+                                                {{ render_field(formReceta.unidad_medida, class="form-control", id="unidad_medida_input") }}
+                                            </div>
+                                            <div class="col-sm-6 form-group">
+                                                {{ formReceta.porcentaje_merma.label(class="form-label", id="porcentaje_merma_label") }}
+                                                {{ render_field(formReceta.porcentaje_merma, class="form-control", id="porcentaje_merma_input") }}
+                                            </div>
+                                            <div class="col-sm-12 text-center">
+                                                <a type="button" id="agregar" name="agregar" value="Agregar" class="btn btn-success mb-3" onclick="addIngrediente()"><i class="fas fa-solid fa-plus"></i> Agregar</a>
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>ID</th>
+                                                        <th>Ingrediente</th>
+                                                        <th>Unidad de Medida</th>
+                                                        <th>Porcentaje de Merma</th>
+                                                        <th>Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tblIngredientes">
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success" formaction="/guardarReceta"><i class="fas fa-solid fa-save"></i>Guardar Receta</button>
+                    <button type="button" class="btn btn-danger"><i class="fas fa-solid fa-trash"></i> Eliminar Receta</button>
+                    <button type="button" class="btn btn-primary"><i class="fas fa-solid fa-eraser"></i> Limpiar Campos</button>
+                    <button type="button" class="btn btn-warning"><i class="fas fa-solid fa-ban"></i> Cancelar</button>
+                </div>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/controllerRecetas.js') }}"></script>
+    <script>
+        function mostrarImagenSeleccionada(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    var imagenPreview = document.querySelector('#imagen_preview');
+                    if (imagenPreview) {
+                        imagenPreview.src = e.target.result;
+                    }
+                };
+
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        function mostrarNombreImagen(input) {
+            var nombreImagen = input.files[0].name;
+            var labelImagen = document.querySelector('#nombre_imagen_label');
+            if (labelImagen) {
+                labelImagen.innerHTML = nombreImagen;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var imagenInput = document.querySelector('#imagen_input');
+            if (imagenInput) {
+                imagenInput.addEventListener('change', function () {
+                    mostrarImagenSeleccionada(this);
+                });
+            }
+            var recetaId = document.getElementById('receta_id').value;
+            var eliminarRecetaBtn = document.getElementById('eliminarRecetaBtn');
+            var modalConfirmacion = document.getElementById('modalConfirmacion');
+            var closeModalConfirmacion = document.getElementById('closeModalConfirmacion');
+            var confirmarEliminarBtn = document.getElementById('confirmarEliminarBtn');
+
+            eliminarRecetaBtn.addEventListener('click', function () {
+                document.getElementById('idEliminar').value = recetaId;
+                modalConfirmacion.classList.add('show');
+                modalConfirmacion.style.display = 'block';
+                modalConfirmacion.setAttribute('aria-modal', 'true');
+            });
+
+            closeModalConfirmacion.addEventListener('click', function () {
+                modalConfirmacion.classList.remove('show');
+                modalConfirmacion.style.display = 'none';
+                modalConfirmacion.removeAttribute('aria-modal');
+            });
+        });
+    </script>
+
+{% endblock %}
+
